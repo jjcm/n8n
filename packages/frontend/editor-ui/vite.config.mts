@@ -178,7 +178,9 @@ export default defineConfig({
 		},
 	},
 	build: {
-		minify: !!release,
+		// Minify all production builds, not just tagged releases — unminified
+		// bundles are ~2-3x larger on the wire.
+		minify: NODE_ENV !== 'development',
 		// Coverage builds emit INLINE maps so browser V8 coverage carries the
 		// map in the script source and monocart resolves offsets back to src.
 		sourcemap: process.env.BUILD_WITH_COVERAGE === 'true' ? 'inline' : !!release,
