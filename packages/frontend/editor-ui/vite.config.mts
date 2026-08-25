@@ -181,6 +181,28 @@ export default defineConfig({
 		// Minify all production builds, not just tagged releases — unminified
 		// bundles are ~2-3x larger on the wire.
 		minify: NODE_ENV !== 'development',
+		rollupOptions: {
+			output: {
+				// Merged chunks can otherwise evaluate modules out of order.
+				strictExecutionOrder: true,
+				// The default chunking emits hundreds of sub-50KB chunks; over
+				// HTTP/1.1 the per-request round trips dominate load time. Merge
+				// small chunks (entries-aware, so lazy-only code is not pulled into
+				// eager chunks) and cap merged chunks so downloads stay parallel.
+				codeSplitting: {
+					minSize: 50 * 1024,
+					maxSize: 800 * 1024,
+					minShareCount: 2,
+					groups: [
+						{
+							name: 'shared',
+							entriesAware: true,
+							entriesAwareMergeThreshold: 50 * 1024,
+						},
+					],
+				},
+			},
+		},
 		// Coverage builds emit INLINE maps so browser V8 coverage carries the
 		// map in the script source and monocart resolves offsets back to src.
 		sourcemap: process.env.BUILD_WITH_COVERAGE === 'true' ? 'inline' : !!release,
