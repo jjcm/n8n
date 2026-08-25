@@ -158,6 +158,11 @@ export const useNodeCreatorStore = defineStore(STORES.NODE_CREATOR, () => {
 		setSelectedView(nodeCreatorView);
 
 		isCreateNodeActive.value = createNodeActive;
+		if (createNodeActive) {
+			// Community node previews are only consumed by this panel; load them
+			// on first open rather than during canvas boot.
+			void nodeTypesStore.ensureCommunityNodePreviews();
+		}
 		if (createNodeActive && source) {
 			setOpenSource(source);
 		}

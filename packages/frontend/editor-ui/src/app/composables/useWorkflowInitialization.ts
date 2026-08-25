@@ -228,10 +228,10 @@ export function useWorkflowInitialization() {
 			// important to load community nodes to render them correctly
 			if (isPreviewPage) {
 				loadPromises.push(nodeTypesStore.fetchCommunityNodePreviews());
-			} else {
-				//We don't need to await this as community node previews are not critical and needed only in nodes search panel
-				void nodeTypesStore.fetchCommunityNodePreviews();
 			}
+			// Outside preview pages the previews payload (~2MB) is only needed by
+			// the nodes search panel, so it is fetched when the node creator opens
+			// instead of competing with the initial canvas load.
 			await Promise.all(loadPromises);
 		} catch (error) {
 			toast.showError(error, i18n.baseText('nodeView.showError.mounted1.title'), {

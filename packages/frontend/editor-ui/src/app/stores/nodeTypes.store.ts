@@ -31,7 +31,7 @@ import { useCredentialsStore } from '@/features/credentials/credentials.store';
 import { useRootStore } from '@n8n/stores/useRootStore';
 import * as utils from '@/app/utils/credentialOnlyNodes';
 import { groupNodeTypesByNameAndType } from '@/app/utils/nodeTypes/nodeTypeTransforms';
-import { computed, shallowRef } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 import { useActionsGenerator } from '@/features/shared/nodeCreator/composables/useActionsGeneration';
 import { removePreviewToken } from '@/features/shared/nodeCreator/nodeCreator.utils';
 import { useSettingsStore } from '@n8n/stores/settings.store';
@@ -486,7 +486,19 @@ export const useNodeTypesStore = defineStore(STORES.NODE_TYPES, () => {
 			);
 		} catch (error) {
 			vettedCommunityNodeTypes.value = new Map();
+		} finally {
+			communityPreviewsFetched.value = true;
 		}
+	};
+
+	// The previews payload is large (~2MB); fetch it on demand instead of at
+	// boot, and only once unless a refresh is explicitly requested.
+	const communityPreviewsFetched = ref(false);
+	const ensureCommunityNodePreviews = async () => {
+		if (communityPreviewsFetched.value) {
+			return;
+		}
+		await fetchCommunityNodePreviews();
 	};
 
 	const getCommunityNodeAttributes = async (nodeName: string) => {
@@ -568,6 +580,7 @@ export const useNodeTypesStore = defineStore(STORES.NODE_TYPES, () => {
 		officialCommunityNodeTypes,
 		unofficialCommunityNodeTypes,
 		fetchCommunityNodePreviews,
+		ensureCommunityNodePreviews,
 		getResourceMapperFields,
 		getLocalResourceMapperFields,
 		getNodeParameterActionResult,
