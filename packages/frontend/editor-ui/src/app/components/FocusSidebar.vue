@@ -7,14 +7,7 @@ import { useInjectWorkflowId } from '@/app/composables/useInjectWorkflowId';
 import { useTelemetry } from '@n8n/composables/useTelemetry';
 import { useDeviceSupport } from '@n8n/composables/useDeviceSupport';
 import { useTelemetryContext } from '@/app/composables/useTelemetryContext';
-import {
-	computed,
-	defineAsyncComponent,
-	onMounted,
-	watch,
-	useTemplateRef,
-	onBeforeUnmount,
-} from 'vue';
+import { computed, onMounted, watch, useTemplateRef, onBeforeUnmount } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useVueFlow } from '@vue-flow/core';
 import { useActiveElement, useThrottleFn } from '@vueuse/core';
@@ -23,22 +16,10 @@ import { type ContextMenuAction } from '@/features/shared/contextMenu/composable
 import type { INodeUi, ResizeData } from '@/Interface';
 import { N8nResizeWrapper } from '@n8n/design-system';
 import FocusSidebarTabs from '@/features/setupPanel/components/FocusSidebarTabs.vue';
-
-// The sidebar panels pull in heavy trees (code editors, NDV parameter lists,
-// evaluations) but only render once the sidebar opens; load them lazily so
-// they stay out of the canvas route chunk.
-const SetupPanel = defineAsyncComponent(
-	async () => await import('@/features/setupPanel/components/SetupPanel.vue'),
-);
-const FocusPanel = defineAsyncComponent(
-	async () => await import('@/app/components/FocusPanel.vue'),
-);
-const TestsPanel = defineAsyncComponent(
-	async () => await import('@/features/ai/evaluation.ee/components/Tests/TestsPanel.vue'),
-);
-const EvaluationsPaywall = defineAsyncComponent(
-	async () => await import('@/features/ai/evaluation.ee/components/Paywall/EvaluationsPaywall.vue'),
-);
+import SetupPanel from '@/features/setupPanel/components/SetupPanel.vue';
+import FocusPanel from '@/app/components/FocusPanel.vue';
+import TestsPanel from '@/features/ai/evaluation.ee/components/Tests/TestsPanel.vue';
+import EvaluationsPaywall from '@/features/ai/evaluation.ee/components/Paywall/EvaluationsPaywall.vue';
 import { useEvaluationsWizardSidepanelExperiment } from '@/experiments/evaluationsWizardSidepanel/useEvaluationsWizardSidepanelExperiment';
 import { useEvaluationsLicense } from '@/features/ai/evaluation.ee/composables/useEvaluationsLicense';
 
