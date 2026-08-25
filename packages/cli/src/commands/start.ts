@@ -197,6 +197,43 @@ export class Start extends BaseCommand<z.infer<typeof flagsSchema>> {
 
 		const files = await glob('**/*.{css,js}', { cwd: EDITOR_UI_DIST_DIR });
 		await Promise.all([compileFile('index.html'), ...files.map(compileFile)]);
+
+		// Precompress the compiled assets in the background; until a .br sibling
+		// exists the server keeps compressing responses on the fly.
+		void this.precompressStaticAssets().catch((error) =>
+			this.logger.warn('Failed to precompress static assets', { error }),
+		);
+	}
+
+	/**
+	 * Compress the compiled js/css assets with maximum-quality brotli so they
+	 * can be served precompressed. On-the-fly compression has to trade
+	 * compression ratio for latency; these files never change while the server
+	 * runs, so compressing them once at full quality saves bytes on every load.
+	 */
+	private async precompressStaticAssets() {
+		const zlib = await import('zlib');
+		const { readFile, writeFile } = await import('fs/promises');
+		const { promisify } = await import('util');
+		const brotliCompress = promisify(zlib.brotliCompress);
+		const { staticCacheDir } = this.instanceSettings;
+
+		const files = await glob('**/*.{css,js}', { cwd: staticCacheDir });
+		for (const file of files) {
+			const filePath = path.join(staticCacheDir, file);
+			const contents = await readFile(filePath);
+			// Skip tiny files: compression gains nothing and each file adds an inode
+			if (contents.length < 4096) continue;
+			const compressed = await brotliCompress(contents, {
+				params: {
+					[zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+					[zlib.constants.BROTLI_PARAM_SIZE_HINT]: contents.length,
+				},
+			});
+			if (compressed.length < contents.length) {
+				await writeFile(`${filePath}.br`, compressed);
+			}
+		}
 	}
 
 	async init() {

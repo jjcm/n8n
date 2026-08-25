@@ -469,9 +469,51 @@ export class Server extends AbstractServer {
 				}
 			};
 
+			// Serve build-time brotli siblings (see `precompressStaticAssets`) for
+			// js/css assets; falls through to on-the-fly compression when absent.
+			const serveStaticPrecompressed: express.RequestHandler = (req, res, next) => {
+				if (req.method !== 'GET' && req.method !== 'HEAD') {
+					next();
+					return;
+				}
+				const acceptEncoding = req.headers['accept-encoding'];
+				if (
+					typeof acceptEncoding !== 'string' ||
+					!acceptEncoding.includes('br') ||
+					!/\.(js|css)$/.test(req.path)
+				) {
+					next();
+					return;
+				}
+				// `sendFile` with `root` rejects paths escaping the static dir
+				const contentType = req.path.endsWith('.css')
+					? 'text/css; charset=utf-8'
+					: 'text/javascript; charset=utf-8';
+				res.sendFile(
+					`${req.path.slice(1)}.br`,
+					{
+						root: staticCacheDir,
+						...cacheOptions,
+						headers: {
+							'Content-Encoding': 'br',
+							'Content-Type': contentType,
+							Vary: 'Accept-Encoding',
+						},
+					},
+					(error) => {
+						if (error && !res.headersSent) {
+							res.removeHeader('Content-Encoding');
+							res.removeHeader('Content-Type');
+							next();
+						}
+					},
+				);
+			};
+
 			this.app.use(
 				'/',
 				historyApiHandler,
+				serveStaticPrecompressed,
 				express.static(staticCacheDir, {
 					...cacheOptions,
 					setHeaders: setCustomCacheHeader,
